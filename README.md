@@ -9,15 +9,15 @@ C2A is a Combat 2.0-based health system for objects in Second Life. This repo co
 - Moderation and monitoring tools to integrate with CombatLog (a Combat 2.0 feature)
 ## Differences and Advantages of C2A vs LBA
 - C2A accepts damage via simple `llDamage`, `llSetDamage`, or related damage methods
- - LBA accepts damage via `llRegionSayTo` message, on a channel derived from a slice of the hash of the object's UUID
+  - LBA accepts damage via `llRegionSayTo` message, on a channel derived from a slice of the hash of the object's UUID
 - C2A can process up to 720 damage instances per second, or 32 every 2 frames.
- - LBA Slim can process up to 22.5 damage messages per second, or 1 every 2 frames.
- - LBA Slim can process up to 180 collisions per second, or 8 every 2 frames.
+  - LBA Slim can process up to 22.5 damage messages per second, or 1 every 2 frames.
+  - LBA Slim can process up to 180 collisions per second, or 8 every 2 frames.
 - C2A allows for dedicated, central monitoring and moderation via CombatLog.
- - LBA performs moderation within each individual object.
+  - LBA performs moderation within each individual object.
 - C2A provides moderation and accountability opportunities to all parties.
- - LBA provides blacklisting only for the land owner's party, if a blackbox exists and is defined in the land parcel description.
+  - LBA provides blacklisting only for the land owner's party, if a blackbox exists and is defined in the land parcel description.
 - C2A supports damage types and resistance out of the box.
- - LBA has a fixed damage cap per hit.
+  - LBA has a fixed damage cap per hit.
 - C2A damage points are based on 1 bullet = 100 damage and stored as `float`, allowing greater flexibility.
- - LBA damage points are based on 1 bullet = 1 damage.
+  - LBA damage points are based on 1 bullet = 1 damage.
