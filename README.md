@@ -2,14 +2,14 @@
 C2A is a Combat 2.0-based health system for objects in Second Life. This repo contains all of the necessary documentation, code, and examples to interact with the system. All areas are subject to change during development of the Combat 2.0 update.
 ## Project Goals
 - Focus on use of [Combat 2.0](https://wiki.secondlife.com/wiki/Category:LSL_Combat2) functions and events
-- Highly responsive, highly efficient script health system for Second Life using LSL
+- Highly responsive, efficient scripted health system for Second Life using LSL
 - Simple and easy to set up and use
 - Integration of variable damage types, with damage resistances provided on demand
-- Interim compatibility with all editions of [LBA v2 by Dread Hudson](https://github.com/Krutchen/SLMCLBA)
+- Interim compatibility with [LBA v2 by Dread Hudson](https://github.com/Krutchen/SLMCLBA)
 - Moderation and monitoring tools to integrate with CombatLog (a Combat 2.0 feature)
 ## Differences and Advantages of C2A vs LBA
-- C2A accepts damage via simple `llDamage`, `llSetDamage`, or related damage methods
-  - LBA accepts damage via `llRegionSayTo` message, on a channel derived from a slice of the hash of the object's UUID
+- C2A accepts damage via simple `llDamage`, `llSetDamage`, or related damage methods.
+  - LBA accepts damage via `llRegionSayTo` message, on a channel derived from a slice of the hash of the object's UUID.
 - C2A can process up to 720 damage instances per second, or 32 every 2 frames.
   - LBA Slim can process up to 22.5 damage messages per second, or 1 every 2 frames.
   - LBA Slim can process up to 180 collisions per second, or 8 every 2 frames.
@@ -19,8 +19,8 @@ C2A is a Combat 2.0-based health system for objects in Second Life. This repo co
   - LBA provides blacklisting only for the land owner's party, if a blackbox exists and is defined in the land parcel description.
 - C2A supports damage types and resistance out of the box.
   - LBA has a fixed damage cap per hit.
-- C2A damage points are based on 1 bullet = 100 damage and stored as `float`, allowing greater flexibility.
-  - LBA damage points are based on 1 bullet = 1 damage.
+- C2A damage points are based on 1 point = 100 damage and stored as `float`, allowing greater flexibility.
+  - LBA damage points are based on 1 point = 1 collision.
 ## How to Interact with C2A
 ### Detection
 Like LBA, C2A puts a unique string into its object description. The C2A descriptor (contained within `[ ]`) can be located anywhere in the description and not just at the beginning of the string. The C2A object description is formatted like so:
@@ -54,6 +54,8 @@ C2A uses the built-in combat system to send damage. Call damage to C2A objects t
 The raw amount of points lost by a C2A object is equal to the damage received divided by 100. This damage may be further modified by damage rules, described in the following section.
 
 Damage inflicted on C2A objects will cause the region to send a CombatLog JSON message on `COMBAT_CHANNEL` from ID `COMBAT_LOG_ID`.
+
+*Note: Some LBA munitions that damage both avatars and LBA armor on direct hit may need to be adjusted. Objects that have an `on_damage` or `final_damage` event cause objects with damage to immediately derez (and send damage) on collision.*
 ## Damage Rules
 C2A is made flexible by its support of various damage rules. Here is a sample response from a C2A object with a number of rules set:
 ```
