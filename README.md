@@ -66,7 +66,7 @@ This is a strided list. Let's turn that into a table to make it easier to interp
 | Types | Modifiers | Effect |
 | --- | --- | --- |
 | 0 | C1 | Cap default damage to 1. |
-| 1 | *2, F5 | Multiply acid damage by 2. |
+| 1 | *2, F5 | Multiply acid damage by 2, and then increase it to at least 5. |
 | 3, 7, 9, 10, 11, 14 | *0 | Nullify cold, necrotic, poison, psychic, radiant, and emotional damage. |
 | 13 | *0.5, C10 | Divide sonic damage by 2, then cap it to 10. |
 | L | C300 | Cap LBA damage to 300. |
