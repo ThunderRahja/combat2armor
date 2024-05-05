@@ -38,8 +38,8 @@ C2A objects also sets their health property when they have more than zero points
 ### Requesting information
 C2A listens and sends on channel `-2453997` to objects matching the filter provided in its descriptor. The following commands are supported:
 - `c2a-type`: replies with `c2a-type:` followed by the types of the C2A script in CSV format. At present, the default and only type provided is `basic`, but future types may include a combination of tags:
-  - `basic`: Standard edition of C2A.
-  - `simple`: No damage rules; takes all damage without modifiers. Planned.
+  - `basic`: Standard edition of C2A. See: [C2A-basic.lsl](https://github.com/ThunderRahja/combat2armor/blob/main/C2A-basic.lsl)
+  - `simple`: No damage rules; takes all damage without modifiers. See: [C2A-simple.lsl](https://github.com/ThunderRahja/combat2armor/blob/main/C2A-simple.lsl)
   - `cuboid`: Has different rules per "side", with six sides in a cuboid shape, similar to LBA-directional. Planned.
   - `component`: Has defined "component" damage zones and different rules per component.
   - `persistent`: Will not derez when points are depleted; useful for permanent features in the region.
