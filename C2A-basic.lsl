@@ -189,7 +189,6 @@ default
             HitReport(llDetectedKey(n), llDetectedOwner(n), amount, finalDamage);
         }
         TakeDamage(totalDamage);
-        llOwnerSay("Took damage: " + (string)totalDamage);
     }
     listen(integer channel, string name, key id, string text)
     {
@@ -209,7 +208,6 @@ default
                 key ownerKey = llGetOwnerKey(id);
                 if (ownerKey == id) ownerKey = "";
                 HitReport(id, ownerKey, amount, finalDamage);
-                llOwnerSay("Took damage: " + (string)finalDamage);
             }
         }
     }
