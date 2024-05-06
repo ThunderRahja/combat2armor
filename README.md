@@ -47,13 +47,13 @@ C2A listens and sends on channel `-2453997` to objects matching the filter provi
 - `c2a-rules`: replies with a pipe `|` delimited strided list of damage rules and modifiers, each in CSV format.
   - See the Damage Rules section below for details.
 ### Sending damage
-C2A uses the built-in combat system to send damage. Call damage to C2A objects the same way that you would for an avatar:
-- Set an existing object's damage: [llSetPrimitiveParams](https://wiki.secondlife.com/wiki/LlSetPrimitiveParams)`([PRIM_DAMAGE, float damage, integer type])` or [llSetDamage](https://wiki.secondlife.com/wiki/LlSetDamage)`(float damage)`
-- Rez an object with damage: [llRezObjectWithParams](https://wiki.secondlife.com/wiki/LlRezObjectWithParams)`(string inventory, [REZ_DAMAGE, float damage, REZ_DAMAGE_TYPE, integer type])`
+C2A uses the built-in combat system to send damage. Damage C2A objects in the same way that you would an avatar:
+- Set an existing object's damage and then collide it with the target: [llSetPrimitiveParams](https://wiki.secondlife.com/wiki/LlSetPrimitiveParams)`([PRIM_DAMAGE, float damage, integer type])` or [llSetDamage](https://wiki.secondlife.com/wiki/LlSetDamage)`(float damage)`
+- Rez an object with damage and then collide it with the target: [llRezObjectWithParams](https://wiki.secondlife.com/wiki/LlRezObjectWithParams)`(string inventory, [REZ_DAMAGE, float damage, REZ_DAMAGE_TYPE, integer type])`
 - Send damage directly, without collision: [llDamage](https://wiki.secondlife.com/wiki/LlDamage)`(key target, float damage, integer type)`
 The raw amount of points lost by a C2A object is equal to the damage received divided by 100. This damage may be further modified by damage rules, described in the following section.
 
-Damage inflicted on C2A objects will cause the region to send a CombatLog JSON message on `COMBAT_CHANNEL` from ID `COMBAT_LOG_ID`.
+100 damage (enough to kill an avatar) translates to 1 point removed from the C2A object's pool, assuming no modifiers, and less damage will remove a fraction of a point. Remember that non-physical objects do not collide with other non-physical objects or avatars seated on them. Damage inflicted on C2A objects will cause the region to send a CombatLog JSON message on `COMBAT_CHANNEL` from ID `COMBAT_LOG_ID`.
 
 *Note: Some LBA munitions that damage both avatars and LBA armor on direct hit may need to be adjusted. Objects that have an `on_damage` or `final_damage` event cause objects with damage to immediately derez (and send damage) on collision.*
 ## Damage Rules
