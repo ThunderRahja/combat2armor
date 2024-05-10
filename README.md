@@ -1,10 +1,10 @@
 # Combat 2 Armor (C2A)
 C2A is a Combat 2.0-based health system for objects in Second Life. This repo contains all of the necessary documentation, code, and examples to interact with the system. All areas are subject to change during development of the Combat 2.0 update.
 ## Project Goals
-- Focus on use of [Combat 2.0](https://wiki.secondlife.com/wiki/Category:LSL_Combat2) functions and events
+- Implementation of [Combat 2.0](https://wiki.secondlife.com/wiki/Category:LSL_Combat2) functions and events
 - Highly responsive, efficient scripted health system for Second Life using LSL
 - Simple and easy to set up and use
-- Integration of variable damage types, with damage resistances provided on demand
+- Integration of variable damage types, with damage modifiers listed on demand
 - Interim compatibility with [LBA v2 by Dread Hudson](https://github.com/Krutchen/SLMCLBA)
 - Moderation and monitoring tools to integrate with CombatLog (a Combat 2.0 feature)
 ## Differences and Advantages of C2A vs LBA
@@ -23,6 +23,8 @@ C2A is a Combat 2.0-based health system for objects in Second Life. This repo co
   - LBA damage points are based on 1 point = 1 collision.
 ## How to Interact with C2A
 ### Detection
+C2A objects can be detected using `llSensor("", "", PASSIVE | SCRIPTED, float radius, PI)` and filtered by object description in the resulting `sensor` event. There is a suggestion to add a new type for `llSensor` to detect objects that have non-zero health: [New llSensor Flag Mask, OBJECT_HEALTH](https://feedback.secondlife.com/combat-20/p/new-llsensor-flag-mask-object-health)
+
 Like LBA, C2A puts a unique string into its object description. The C2A descriptor (contained within `[ ]`) can be located anywhere in the description and not just at the beginning of the string. The C2A object description is formatted like so:
 ```
 LBA.v.[C2A LBA v0.0.0:FILTER],points,MAX_POINTS
@@ -34,7 +36,7 @@ LBA.v.[C2A LBA v0.0.0:FILTER],points,MAX_POINTS
 - `FILTER` will always be present at the end of the descriptor, is randomized on rez, and is the object name that this C2A object listens for.
 - `points` is carried over from LBA to describe how many points remain, rounded down to the nearest integer. A 0 means less than 1 point remains and is not necessarily depleted.
 - `MAX_POINTS` is also carried over from LBA to describe the maximum points the object can have, rounded to the nearest integer.
-C2A objects also sets their health property when they have more than zero points remaining. Object health can be retrieved in the same way as avatar health: `llGetObjectDetails(objectKey, [OBJECT_HEALTH])`
+C2A objects also sets their health property when they have more than zero points remaining. Object health can be retrieved in the same way as avatar health: `llGetHealth(key id)` or `llGetObjectDetails(key id, [OBJECT_HEALTH])`
 ### Requesting information
 C2A listens and sends on channel `-2453997` to objects matching the filter provided in its descriptor. The following commands are supported:
 - `c2a-type`: replies with `c2a-type:` followed by the types of the C2A script in CSV format. Available and planned types include:
@@ -47,7 +49,7 @@ C2A listens and sends on channel `-2453997` to objects matching the filter provi
 - `c2a-rules`: replies with a pipe `|` delimited strided list of damage rules and modifiers, each in CSV format.
   - See the Damage Rules section below for details.
 ### Sending damage
-C2A uses the built-in combat system to send damage. Damage C2A objects in the same way that you would an avatar:
+C2A uses the built-in combat system, LLCS, to send damage. 100 LLCS damage results in 1 point of C2A damage, and damage does not get rounded off. Damage C2A objects in the same way that you would an avatar:
 - Set an existing object's damage and then collide it with the target: [llSetPrimitiveParams](https://wiki.secondlife.com/wiki/LlSetPrimitiveParams)`([PRIM_DAMAGE, float damage, integer type])` or [llSetDamage](https://wiki.secondlife.com/wiki/LlSetDamage)`(float damage)`
 - Rez an object with damage and then collide it with the target: [llRezObjectWithParams](https://wiki.secondlife.com/wiki/LlRezObjectWithParams)`(string inventory, [REZ_DAMAGE, float damage, REZ_DAMAGE_TYPE, integer type])`
 - Send damage directly, without collision: [llDamage](https://wiki.secondlife.com/wiki/LlDamage)`(key target, float damage, integer type)`
@@ -55,7 +57,7 @@ The raw amount of points lost by a C2A object is equal to the damage received di
 
 100 damage (enough to kill an avatar) translates to 1 point removed from the C2A object's pool, assuming no modifiers, and less damage will remove a fraction of a point. Remember that non-physical objects do not collide with other non-physical objects or avatars seated on them. Damage inflicted on C2A objects will cause the region to send a CombatLog JSON message on `COMBAT_CHANNEL` from ID `COMBAT_LOG_ID`.
 
-*Note: Some LBA munitions that damage both avatars and LBA armor on direct hit may need to be adjusted. Objects that have an `on_damage` or `final_damage` event cause objects with damage to immediately derez (and send damage) on collision.*
+*Note: Some LBA munitions that damage both avatars and LBA armor on direct hit may need to be adjusted to increase their damage and/or set a damage type. Objects that have an `on_damage` or `final_damage` event cause objects with damage to immediately derez (and send damage) on collision.*
 ## Damage Rules
 C2A is made flexible by its support of various damage rules. Here is a sample response from a C2A object with a number of rules set:
 ```
@@ -82,12 +84,22 @@ Most operators are followed by a value, either integer or float. Modifiers are p
 
 |  | Operator | Description |
 | --- | --- | --- |
+| Z | Zone | The following damage modifiers apply to this zone number, or any zone if `?`. (C2A-cuboid and C2A-component only) |
 | X | Excess | If the absolute value of damage is above this value, set it to 0. |
 | D | Drop | If the absolute value of damage is below this value, set it to 0. |
-| C | Cap | If the absolute value of damage is above this value, reduce it to this value. |
-| F | Floor | If the absolute value of damage is below this value, raise it to this value. |
+| C | Cap | If the absolute value of damage is above this value, reduce it to value. |
+| F | Floor | If the absolute value of damage is below this value, raise it to value. |
 | * | Multiply | Multiply damage by this value. |
 | + | Add | Increase absolute damage by this value. |
-| - | Subtract | Reduce absolute damage by this value, but not below zero. |
+| - | Subtract | Reduce absolute damage by value, but not below zero. |
 | & | Rectify | Change negative damage to positive damage. |
+| ^ | Positive* | Change negative damage to 0. |
 | % | Chance | Continue processing modifiers after this one with a random value% chance, or stop if check fails. `%100` will always continue. |
+| > | Greater* | Continue processing modifiers after this one if damage is higher than value. |
+| < | Less* | Continue processing modifiers after this one if damage is lower than value. |
+| $ | Consume* | Continue processing modifiers after this one if a consumable of this value index is above zero, decrementing it by 1. |
+
+<sup>* Operator planned but not yet implemented.</sup>
+
+## How to Contribute
+I am seeking feedback from content creators! This is intended to be a community project that encompasses most use cases where scripted object health is needed. If you are a content creator (for weapons, vehicles, etc.) or combat region manager and would like to join the Combat 2 Armor discussion and development Discord server, send a message to Thunder Rahja via Second Life. Alternatively, click the Issues tab to open a bug report or feature request. You can submit code changes directly by creating a fork and subsequently a pull request.
