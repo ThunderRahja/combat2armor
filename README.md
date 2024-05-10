@@ -29,8 +29,8 @@ Like LBA, C2A puts a unique string into its object description. The C2A descript
 ```
 LBA.v.[C2A LBA v0.0.0:FILTER],points,MAX_POINTS
 ```
-- `LBA.v.` is included for compatibility with legacy LBA weapons.
-- `[C2A ` (including the space) will always mark the beginning of the C2A descriptor and can easily be located: `llSubStringIndex(objectDesc, "[C2A ")`.
+- `LBA.v.` is included at the beginning for compatibility with legacy LBA weapons.
+- `C2A` marks the beginning of the C2A descriptor, and is always between `[` and a space.
 - `LBA` is an optional tag describing LBA compatibility. The object description will also typically start with `LBA.v.` for legacy LBA weapons.
 - `v0.0.0` describes the version number of C2A in this object and is always followed by the `:` delimiter.
 - `FILTER` will always be present at the end of the descriptor, is randomized on rez, and is the object name that this C2A object listens for.
@@ -50,9 +50,10 @@ C2A listens and sends on channel `-2453997` to objects matching the filter provi
   - See the Damage Rules section below for details.
 ### Sending damage
 C2A uses the built-in combat system, LLCS, to send damage. 100 LLCS damage results in 1 point of C2A damage, and damage does not get rounded off. Damage C2A objects in the same way that you would an avatar:
-- Set an existing object's damage and then collide it with the target: [llSetPrimitiveParams](https://wiki.secondlife.com/wiki/LlSetPrimitiveParams)`([PRIM_DAMAGE, float damage, integer type])` or [llSetDamage](https://wiki.secondlife.com/wiki/LlSetDamage)`(float damage)`
-- Rez an object with damage and then collide it with the target: [llRezObjectWithParams](https://wiki.secondlife.com/wiki/LlRezObjectWithParams)`(string inventory, [REZ_DAMAGE, float damage, REZ_DAMAGE_TYPE, integer type])`
-- Send damage directly, without collision: [llDamage](https://wiki.secondlife.com/wiki/LlDamage)`(key target, float damage, integer type)`
+- Set an existing object's damage (up to 100) and then collide it with the target: [llSetPrimitiveParams](https://wiki.secondlife.com/wiki/LlSetPrimitiveParams)`([PRIM_DAMAGE, float damage, integer type])` or [llSetDamage](https://wiki.secondlife.com/wiki/LlSetDamage)`(float damage)`
+- Rez an object with damage (up to 100) and then collide it with the target: [llRezObjectWithParams](https://wiki.secondlife.com/wiki/LlRezObjectWithParams)`(string inventory, [REZ_DAMAGE, float damage, REZ_DAMAGE_TYPE, integer type])`
+- Send damage directly: [llDamage](https://wiki.secondlife.com/wiki/LlDamage)`(key target, float damage, integer type)`
+
 The raw amount of points lost by a C2A object is equal to the damage received divided by 100. This damage may be further modified by damage rules, described in the following section.
 
 100 damage (enough to kill an avatar) translates to 1 point removed from the C2A object's pool, assuming no modifiers, and less damage will remove a fraction of a point. Remember that non-physical objects do not collide with other non-physical objects or avatars seated on them. Damage inflicted on C2A objects will cause the region to send a CombatLog JSON message on `COMBAT_CHANNEL` from ID `COMBAT_LOG_ID`.
@@ -61,13 +62,12 @@ The raw amount of points lost by a C2A object is equal to the damage received di
 ## Damage Rules
 C2A is made flexible by its support of various damage rules. Here is a sample response from a C2A object with a number of rules set:
 ```
-c2a-rules:0|C1|1|*2,F5|3,7,9,10,11,14|*0|13|*0.5,C10|L|C300|?|C100
+c2a-rules:1|*2,F5|3,7,9,10,11,14|*0|13|*0.5,C10|L|C300|?|C100
 ```
 This is a strided list. Let's turn that into a table to make it easier to interpret:
 
 | Types | Modifiers | Effect |
 | --- | --- | --- |
-| 0 | C1 | Cap default damage to 1. |
 | 1 | *2, F5 | Multiply acid damage by 2, and then increase it to at least 5. |
 | 3, 7, 9, 10, 11, 14 | *0 | Nullify cold, necrotic, poison, psychic, radiant, and emotional damage. |
 | 13 | *0.5, C10 | Divide sonic damage by 2, then cap it to 10. |
