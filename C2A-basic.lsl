@@ -10,7 +10,6 @@ integer TEXT_LINK = LINK_THIS;
 integer IS_VEHICLE = FALSE;
 float MAX_POINTS = 100;
 list DAMAGE_RULES = [ // Refer to suggested damage types here: https://wiki.secondlife.com/wiki/LlDamage
-    "0", "C1",              // Default damage type is capped to 1
     "1", "*2,F5",           // Acid damage is multiplied by 2, then floored to at least 5
     "3,7,9,10,11,14", "*0", // Cold, necrotic, poison, psychic, radiant, and emotional damage are nullified
     "13", "*0.5,C10",       // Sonic damage is divided by 2, then capped to at most 10
@@ -60,6 +59,7 @@ Init(float startPoints) // Call only from state_entry or on_rez
         llOwnerSay("DAMAGE_RULES is invalid, try again."); // prevent parsing errors
         return;
     }
+    llSetLinkPrimitiveParamsFast(LINK_SET, [PRIM_TEXT, "", ZERO_VECTOR, 0]);
     if (startPoints <= 0 || startPoints > MAX_POINTS) points = MAX_POINTS;
     else points = startPoints;
     integer lbaChannel = (integer)("0x" + llGetSubString(llMD5String((string)llGetKey(), 0), 0, 3));
@@ -182,7 +182,7 @@ default
         while (n--)
         {
             list damageInfo = llDetectedDamage(n);
-            float amount = llList2Float(damageInfo, 0);
+            float amount = llList2Float(damageInfo, 0) / 100;
             integer type = llList2Integer(damageInfo, 1);
             float finalDamage = ProcessDamage(amount, (string)type);
             totalDamage += finalDamage;
