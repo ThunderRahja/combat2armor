@@ -31,8 +31,6 @@ CheckC2A(key target)
     {
         llOwnerSay("Target does not exist: " + (string)target);
     }
-    typeReply = "";
-    rulesReply = "";
     targetKey = target;
     string targetDesc = (string)llGetObjectDetails(target, [OBJECT_DESC]);
     integer left = llSubStringIndex(targetDesc, "[");
@@ -48,6 +46,7 @@ CheckC2A(key target)
         llSetObjectName(nameFilter);
         llRegionSayTo(targetKey, C2A_CHANNEL, "c2a-type");
         llRegionSayTo(targetKey, C2A_CHANNEL, "c2a-rules");
+        llRegionSayTo(targetKey, C2A_CHANNEL, "c2a-cons");
         llSetObjectName(myName);
         llSetTimerEvent(1);
     }
@@ -106,7 +105,7 @@ ShowResult()
                     }
                     types = llListReplaceList(types, [type], n, n);
                 }
-                list modifiers = llCSV2List(llList2String(rules, i + 1));
+                list modifiers = llParseStringKeepNulls(llList2String(rules, i + 1), [","], []);
                 n = llGetListLength(modifiers);
                 while (n--)
                 {
@@ -171,11 +170,12 @@ default
                 rulesReply = llDeleteSubString(text, 0, index);
                 if (rulesReply == "") rulesReply = "(none)";
             }
+            else if (left = "c2a-cons")
+            {
+                llOwnerSay("Consumables: " + llList2CSV(llCSV2List(llDeleteSubString(text, 0, index))));
+            }
             if (typeReply != "" && rulesReply != "")
             {
-                llSetTimerEvent(0);
-                llListenRemove(listenId);
-                listenId = 0;
                 ShowResult();
             }
         }
@@ -183,8 +183,10 @@ default
     timer()
     {
         llSetTimerEvent(0);
+        if (typeReply == "" || rulesReply == "") llOwnerSay("C2A check timed out.");
+        typeReply = "";
+        rulesReply = "";
         llListenRemove(listenId);
         listenId = 0;
-        llOwnerSay("C2A check timed out.");
     }
 }
