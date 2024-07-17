@@ -16,6 +16,7 @@ list DAMAGE_RULES = [ // Refer to suggested damage types here: https://wiki.seco
     "L", "C300",            // LBA damage is capped to 300
     "?", "C100"             // Any other damage type is capped to 100
 ];
+list DAMAGE_CONSUMABLES = []; // Used with $ operator; consumables are set to this list on rez and reset
 
 PointsChanged() // Called after all damage is processed
 {
@@ -52,6 +53,7 @@ HitReport(key objectKey, key ownerKey, float rawDamage, float finalDamage) // Ca
 string c2aName;
 float points;
 integer listenId;
+list consumables;
 Init(float startPoints) // Call only from state_entry or on_rez
 {
     if (llGetListLength(llParseStringKeepNulls((string)DAMAGE_RULES, [], ["|"])) > 1)
@@ -88,13 +90,13 @@ float ProcessDamage(float amount, string type)
         list ruleTypes = llCSV2List(llList2String(DAMAGE_RULES, i));
         if ((string)ruleTypes == "?" || llListFindList(ruleTypes, [type]) != -1)
         {
-            list ruleModifiers = llCSV2List(llList2String(DAMAGE_RULES, i + 1));
+            list ruleModifiers = llParseStringKeepNulls(llList2String(DAMAGE_RULES, i + 1), [","], []);
             integer x;
             integer y = llGetListLength(ruleModifiers);
             for (; x < y; x++)
             {
                 string mod = llList2String(ruleModifiers, x);
-                integer rule = llSubStringIndex("XDCF*+-&%", llGetSubString(mod, 0, 0));
+                integer rule = llSubStringIndex("XDCF*+-&^%><$", llGetSubString(mod, 0, 0));
                 float value = (float)llDeleteSubString(mod, 0, 0);
                 integer sign = 1;
                 if (amount < 0) sign = -1;
@@ -132,9 +134,28 @@ float ProcessDamage(float amount, string type)
                 {
                     amount = llFabs(amount);
                 }
-                else if (rule == 8) // %: chance
+                else if (rule == 8) // ^: positive
+                {
+                    if (amount < 0) amount = 0;
+                }
+                else if (rule == 9) // %: chance
                 {
                     if (llFrand(100) > value) x = y; // stop processing more modifiers
+                }
+                else if (rule == 10) // >: greater
+                {
+                    if (amount <= value) x = y; // stop processing more modifiers
+                }
+                else if (rule == 11) // <: less
+                {
+                    if (amount >= value) x = y; // stop processing more modifiers
+                }
+                else if (rule == 12) // $: consume
+                {
+                    integer index = llFloor(value);
+                    integer quantity = llList2Integer(consumables, index);
+                    if (quantity > 0) consumables = llListReplaceList(consumables, [quantity - 1], index, index);
+                    else x = y; // stop processing more modifiers
                 }
             }
             i = t;
@@ -156,10 +177,15 @@ default
         }
         else llSetLinkPrimitiveParamsFast(LINK_SET, [PRIM_SCRIPTED_SIT_ONLY, TRUE]);
         Init(0);
+        consumables = DAMAGE_CONSUMABLES;
     }
     on_rez(integer p)
     {
-        if (p) Init(p);
+        if (p)
+        {
+            Init(p);
+            consumables = DAMAGE_CONSUMABLES;
+        }
         else if (llGetObjectPermMask(MASK_OWNER) != PERM_ALL)
         {
             // If you don't have full permissions, you shouldn't be rezzing this manually.
@@ -196,6 +222,8 @@ default
         {
             if (text == "c2a-rules") llRegionSayTo(id, channel, "c2a-rules:" + llDumpList2String(DAMAGE_RULES, "|"));
             else if (text == "c2a-type") llRegionSayTo(id, channel, "c2a-type:basic");
+            else if (text == "c2a-cons") llRegionSayTo(id, channel, "c2a-cons:" + llDumpList2String(DAMAGE_CONSUMABLES,
+                ","));
         }
         else // LBA channel
         {
