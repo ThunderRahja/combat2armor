@@ -23,7 +23,7 @@ C2A is a Combat 2.0-based health system for objects in Second Life. This repo co
   - LBA damage points are based on 1 point = 1 collision.
 ## How to Interact with C2A
 ### Detection
-C2A objects can be detected using `llSensor("", "", PASSIVE | SCRIPTED, float radius, PI)` and filtered by object description in the resulting `sensor` event. There is a suggestion to add a new type for `llSensor` to detect objects that have non-zero health: [New llSensor Flag Mask, OBJECT_HEALTH](https://feedback.secondlife.com/combat-20/p/new-llsensor-flag-mask-object-health)
+C2A objects can be detected using `llSensor("", "", PASSIVE | SCRIPTED | DAMAGEABLE, float radius, PI)` and filtered by object description in the resulting `sensor` event.
 
 Like LBA, C2A puts a unique string into its object description. The C2A descriptor (contained within `[ ]`) can be located anywhere in the description and not just at the beginning of the string. The C2A object description is formatted like so:
 ```
@@ -96,13 +96,11 @@ Most operators are followed by a value, either integer or float. Modifiers are p
 | + | Add | Increase absolute damage by this value. |
 | - | Subtract | Reduce absolute damage by value, but not below zero. |
 | & | Rectify | Change negative damage to positive damage. |
-| ^ | Positive* | Change negative damage to 0. |
+| ^ | Positive | Change negative damage to 0. |
 | % | Chance | Continue processing modifiers after this one with a random value% chance, or stop if check fails. `%100` will always continue. |
-| > | Greater* | Continue processing modifiers after this one if damage is higher than value. |
-| < | Less* | Continue processing modifiers after this one if damage is lower than value. |
-| $ | Consume* | Continue processing modifiers after this one if a consumable of this value index is above zero, decrementing it by 1. |
-
-<sup>* Operator planned but not yet implemented.</sup>
+| > | Greater | Continue processing modifiers after this one if damage is higher than value. |
+| < | Less | Continue processing modifiers after this one if damage is lower than value. |
+| $ | Consume | Continue processing modifiers after this one if a consumable of this value index is above zero, decrementing it by 1. |
 
 ## How to Contribute
 I am seeking feedback from content creators! This is intended to be a community project that encompasses most use cases where scripted object health is needed. If you are a content creator (for weapons, vehicles, etc.) or combat region manager and would like to join the Combat 2 Armor discussion and development Discord server, send a message to Thunder Rahja via Second Life. Alternatively, click the Issues tab to open a bug report or feature request. You can submit code changes directly by creating a fork and subsequently a pull request.
