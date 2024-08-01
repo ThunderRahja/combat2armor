@@ -198,7 +198,7 @@ default
             listenId = llListen(lbaChannel, "", "", "");
         }
     }
-    final_damage(integer n)
+    on_damage(integer n)
     {
         float totalDamage;
         while (n--)
