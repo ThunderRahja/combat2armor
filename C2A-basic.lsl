@@ -41,11 +41,6 @@ PointsChanged() // Called after all damage is processed
     }
 }
 
-HitReport(key objectKey, key ownerKey, float rawDamage, float finalDamage) // Called after each individual damage
-{
-    // Report hits to owner from here, if you want. Maybe filter by amount of damage received?
-}
-
     /*=====================================================================
     Unless making your own edition, do not change anything below this line.
     =====================================================================*/
@@ -181,6 +176,7 @@ default
     }
     on_rez(integer p)
     {
+        llListenRemove(listenId);
         if (p)
         {
             Init(p);
@@ -212,7 +208,7 @@ default
             integer type = llList2Integer(damageInfo, 1);
             float finalDamage = ProcessDamage(amount, (string)type);
             totalDamage += finalDamage;
-            HitReport(llDetectedKey(n), llDetectedOwner(n), amount, finalDamage);
+            if (finalDamage != amount) llAdjustDamage(n, finalDamage);
         }
         TakeDamage(totalDamage);
     }
@@ -235,7 +231,6 @@ default
                 TakeDamage(amount);
                 key ownerKey = llGetOwnerKey(id);
                 if (ownerKey == id) ownerKey = "";
-                HitReport(id, ownerKey, amount, finalDamage);
             }
         }
     }
