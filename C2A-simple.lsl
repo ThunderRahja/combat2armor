@@ -76,21 +76,13 @@ default
     }
     on_rez(integer p)
     {
+        llListenRemove(listenId);
         if (p) Init(p);
         else if (llGetObjectPermMask(MASK_OWNER) != PERM_ALL)
         {
             // If you don't have full permissions, you shouldn't be rezzing this manually.
             llSleep(5);
             llDie();
-        }
-    }
-    changed(integer c)
-    {
-        if (c & CHANGED_REGION)
-        {
-            llListenRemove(listenId);
-            integer lbaChannel = (integer)("0x" + llGetSubString(llMD5String((string)llGetKey(), 0), 0, 3));
-            listenId = llListen(lbaChannel, "", "", "");
         }
     }
     final_damage(integer n)
