@@ -10,6 +10,7 @@ integer TEXT_LINK = LINK_THIS;
 integer IS_VEHICLE = FALSE;
 float MAX_POINTS = 100;
 list DAMAGE_RULES = [ // Refer to suggested damage types here: https://wiki.secondlife.com/wiki/LlDamage
+    // This is a sample damage rules set. Check the repo for the section on damage rules to create your own.
     "1", "*2,F5",           // Acid damage is multiplied by 2, then floored to at least 5
     "3,7,9,10,11,14", "*0", // Cold, necrotic, poison, psychic, radiant, and emotional damage are nullified
     "13", "*0.5,C10",       // Sonic damage is divided by 2, then capped to at most 10
@@ -18,25 +19,30 @@ list DAMAGE_RULES = [ // Refer to suggested damage types here: https://wiki.seco
 ];
 list DAMAGE_CONSUMABLES = []; // Used with $ operator; consumables are set to this list on rez and reset
 
-PointsChanged() // Called after all damage is processed
+PointsChanged(float newPoints) // Called after all damage is processed
 {
-    string newText = "[C2A+LBA]\n";
-    integer n = 10;
-    do
+    // All code in this function may safely be changed or removed without breaking the system. Change it as you like!
+
+    // Part 1: Generate and set the floating text string
+    string newText = "[C2A+LBA]\n"; // C2A tag
+    integer n = 10; // Display this many segments of health bar
+    do // Generate the health bar
     {
         if (points > ((10 - n) * MAX_POINTS / 10)) newText += "⬛";
         else newText += "⬜";
     }
     while (--n);
-    newText +=  " " + (string)llFloor(points) + " / " + (string)llRound(MAX_POINTS);
-    vector textColor = <1,1,0>; // default color
-    if (points == MAX_POINTS) textColor = <0,1,0>; // 100% points
-    else if (points / MAX_POINTS < 0.2) textColor = <1,0,0>; // 20% points or below
-    llSetLinkPrimitiveParamsFast(TEXT_LINK, [PRIM_TEXT, newText, textColor, 1]);
+    newText +=  " " + (string)llFloor(points) + " / " + (string)llRound(MAX_POINTS); // Add numerical health / max
+    vector textColor = <1,1,0>; // Default text color
+    if (points == MAX_POINTS) textColor = <0,1,0>; // Color at 100% points
+    else if (points / MAX_POINTS <= 0.2) textColor = <1,0,0>; // Color at 20% points or below
+    llSetLinkPrimitiveParamsFast(TEXT_LINK, [PRIM_TEXT, newText, textColor, 1]); // Display the text
+
+    // Part 2: Handle object death
     if (points == 0)
     {
-        llMessageLinked(LINK_SET, 0, "die", "");
-        llSleep(1);
+        llMessageLinked(LINK_SET, 0, "die", ""); // Tell other scripts, if present
+        llSleep(1); // Give other scripts a second to finish up
         llDie();
     }
 }
@@ -45,10 +51,11 @@ PointsChanged() // Called after all damage is processed
     Unless making your own edition, do not change anything below this line.
     =====================================================================*/
 
-string c2aName;
-float points;
-integer listenId;
-list consumables;
+string c2aName; // Randomized name filter to limit message spam griefing
+float points; // Current health points of the object
+integer listenId; // Listen handler for LBA
+list consumables; // Currently available consumables for $ operator in DAMAGE_RULES
+
 Init(float startPoints) // Call only from state_entry or on_rez
 {
     if (llGetListLength(llParseStringKeepNulls((string)DAMAGE_RULES, [], ["|"])) > 1)
@@ -65,6 +72,7 @@ Init(float startPoints) // Call only from state_entry or on_rez
     while (n--) c2aName += llChar(llFloor(llFrand(26)) + 65);
     llListen(-2453997, c2aName, "", "");
     TakeDamage(0);
+    consumables = DAMAGE_CONSUMABLES;
 }
 TakeDamage(float amount)
 {
@@ -74,7 +82,7 @@ TakeDamage(float amount)
     llSetObjectDesc("LBA.v.[C2A LBA v0.1.0:" + c2aName + "]," + (string)llFloor(points) + ","
         + (string)llRound(MAX_POINTS));
     llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_HEALTH, points]);
-    PointsChanged();
+    PointsChanged(points);
 }
 float ProcessDamage(float amount, string type)
 {
@@ -172,7 +180,6 @@ default
         }
         else llSetLinkPrimitiveParamsFast(LINK_SET, [PRIM_SCRIPTED_SIT_ONLY, TRUE]);
         Init(0);
-        consumables = DAMAGE_CONSUMABLES;
     }
     on_rez(integer p)
     {
@@ -180,22 +187,16 @@ default
         if (p)
         {
             Init(p);
-            consumables = DAMAGE_CONSUMABLES;
         }
         else if (llGetObjectPermMask(MASK_OWNER) != PERM_ALL)
         {
             // If you don't have full permissions, you shouldn't be rezzing this manually.
-            llSleep(5);
-            llDie();
-        }
-    }
-    changed(integer c)
-    {
-        if (c & CHANGED_REGION)
-        {
-            llListenRemove(listenId);
-            integer lbaChannel = (integer)("0x" + llGetSubString(llMD5String((string)llGetKey(), 0), 0, 3));
-            listenId = llListen(lbaChannel, "", "", "");
+            if (llGetAttached())
+            {
+                llRequestPermissions(llGetOwner(), PERMISSION_ATTACH);
+                llDetachFromAvatar();
+            }
+            else llDie();
         }
     }
     on_damage(integer n)
@@ -204,11 +205,11 @@ default
         while (n--)
         {
             list damageInfo = llDetectedDamage(n);
-            float amount = llList2Float(damageInfo, 0) / 100;
+            float amount = llList2Float(damageInfo, 2) / 100;
             integer type = llList2Integer(damageInfo, 1);
             float finalDamage = ProcessDamage(amount, (string)type);
             totalDamage += finalDamage;
-            if (finalDamage != amount) llAdjustDamage(n, finalDamage);
+            if (finalDamage != amount) llAdjustDamage(n, finalDamage * 100);
         }
         TakeDamage(totalDamage);
     }
