@@ -4,6 +4,8 @@
     
     This script is licensed under GNU GPL 3.0. You can read the license here:
         https://github.com/ThunderRahja/combat2armor/blob/main/LICENSE
+    
+    To read C2A data with this script, use the command: /1 check [UUID]
 */
 
 list COMMON_TYPES = ["default", "acid", "blunt", "cold", "electric", "fire", "force", "necrotic", "piercing", "poison",
