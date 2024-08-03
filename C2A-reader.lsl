@@ -9,7 +9,7 @@
 */
 
 list COMMON_TYPES = ["default", "acid", "blunt", "cold", "electric", "fire", "force", "necrotic", "piercing", "poison",
-    "psychic", "radiant", "slash", "sonic", "emotional"];
+    "psychic", "radiant", "slash", "sonic", "emotional", "impact"];
 string OPERATORS = "XDCF*+-&^%><$";
 list OPER_TEXT = ["set > {V} to 0", "set < {V} to 0", "lower to maximum {V}", "raise to minimum {V}",
     "multiply by {V}", "add {V}", "subtract {V} to minimum 0", "change negative to positive", "change negative to 0",
@@ -101,24 +101,27 @@ ShowResult()
                 {
                     string type = llList2String(types, n);
                     string sign = llGetSubString(type, -1, -1);
-                    if (llListFindList(["+", "-"], [llGetSubString(type, -1, -1)]) != -1)
+                    string signText;
+                    integer i;
+                    if ((i = llListFindList(["+", "-"], [llGetSubString(type, -1, -1)])) != -1)
                     {
                         sign = llGetSubString(type, -1, -1);
                         type = llDeleteSubString(type, -1, -1);
+                        signText = ", " + llList2String(["positive", "negative"], i) + " only";
                     }
-                    else sign = "±";
+                    else sign = "";
                     if (type == "?") type = "unspecified";
                     else if (type == "*") type = "all";
                     else if (type == "L") type = "LBA";
                     else
                     {
                         integer typeInt = (integer)type;
-                        if (typeInt >= 0 && typeInt <= 14)
+                        if (typeInt >= -1 && typeInt <= 14)
                         {
-                            type = type + " (" + llList2String(COMMON_TYPES, typeInt) + ")";
+                            type = type + sign + " (" + llList2String(COMMON_TYPES, typeInt) + signText + ")";
                         }
                     }
-                    types = llListReplaceList(types, [sign + type], n, n);
+                    types = llListReplaceList(types, [type], n, n);
                 }
                 list modifiers = llParseStringKeepNulls(llList2String(rules, i + 1), [","], []);
                 n = llGetListLength(modifiers);
