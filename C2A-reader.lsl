@@ -17,20 +17,24 @@ key targetKey;
 string targetVer;
 string typeReply;
 string rulesReply;
+string consReply;
 integer listenId;
 
 CheckC2A(key target)
 {
     if (listenId) return;
-    if (target == targetKey)
+    /*if (target == targetKey) // Show cached results
     {
         ShowResult();
         return;
-    }
-    else if (llGetOwnerKey(target) == target)
+    }*/
+    if (llGetOwnerKey(target) == target)
     {
         llOwnerSay("Target does not exist: " + (string)target);
     }
+    typeReply = "";
+    rulesReply = "";
+    consReply = "";
     targetKey = target;
     string targetDesc = (string)llGetObjectDetails(target, [OBJECT_DESC]);
     integer left = llSubStringIndex(targetDesc, "[");
@@ -60,6 +64,7 @@ ShowResult()
     llOwnerSay("C2A data for \"" + llKey2Name(targetKey) + "\":");
     llOwnerSay("C2A version: " + targetVer);
     llOwnerSay("Type: " + typeReply);
+    if (consReply) llOwnerSay("Consumables: " + consReply);
     list rules = llParseStringKeepNulls(rulesReply, ["|"], []);
     integer t = llGetListLength(rules);
     if (t == 1)
@@ -93,7 +98,15 @@ ShowResult()
                 while (n--)
                 {
                     string type = llList2String(types, n);
-                    if (type == "?") type = "any";
+                    string sign = llGetSubString(type, -1, -1);
+                    if (llListFindList(["+", "-"], [llGetSubString(type, -1, -1)]) != -1)
+                    {
+                        sign = llGetSubString(type, -1, -1);
+                        type = llDeleteSubString(type, -1, -1);
+                    }
+                    else sign = "±";
+                    if (type == "?") type = "unspecified";
+                    else if (type == "*") type = "all";
                     else if (type == "L") type = "LBA";
                     else
                     {
@@ -103,7 +116,7 @@ ShowResult()
                             type = type + " (" + llList2String(COMMON_TYPES, typeInt) + ")";
                         }
                     }
-                    types = llListReplaceList(types, [type], n, n);
+                    types = llListReplaceList(types, [sign + type], n, n);
                 }
                 list modifiers = llParseStringKeepNulls(llList2String(rules, i + 1), [","], []);
                 n = llGetListLength(modifiers);
@@ -172,11 +185,7 @@ default
             }
             else if (left = "c2a-cons")
             {
-                llOwnerSay("Consumables: " + llList2CSV(llCSV2List(llDeleteSubString(text, 0, index))));
-            }
-            if (typeReply != "" && rulesReply != "")
-            {
-                ShowResult();
+                consReply = llList2CSV(llCSV2List(llDeleteSubString(text, 0, index)));
             }
         }
     }
@@ -184,8 +193,7 @@ default
     {
         llSetTimerEvent(0);
         if (typeReply == "" || rulesReply == "") llOwnerSay("C2A check timed out.");
-        typeReply = "";
-        rulesReply = "";
+        else ShowResult();
         llListenRemove(listenId);
         listenId = 0;
     }
