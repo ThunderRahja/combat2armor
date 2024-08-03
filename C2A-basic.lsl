@@ -9,8 +9,9 @@
         https://github.com/ThunderRahja/combat2armor
 */
 
-integer TEXT_LINK = LINK_THIS;
-integer IS_VEHICLE = FALSE;
+integer TEXT_LINK = LINK_THIS; // which link to display floating text from
+integer IS_VEHICLE = FALSE; // makes sitters invulnerable, blocks grab, and reports hits to sitters
+float REPORT_THRESHOLD = 5; // if this is a vehicle, reports hits when receiving at least this much damage
 float MAX_POINTS = 100;
 list DAMAGE_RULES = [
     // See the repo for damage rule set examples that may be copy/pasted here.
@@ -20,6 +21,7 @@ list DAMAGE_CONSUMABLES = []; // Used with $ operator; consumables are set to th
 PointsChanged(float newPoints) // Called after all damage is processed
 {
     // All code in this function may safely be changed or removed without breaking the system. Change it as you like!
+    // Note that sitters on vehicles will be notified of damage before this function is called.
 
     // Part 1: Generate and set the floating text string
     string newText = "[C2A+LBA]\n"; // C2A tag
@@ -53,6 +55,7 @@ string c2aName; // Randomized name filter to limit message spam griefing
 float points; // Current health points of the object
 integer listenId; // Listen handler for LBA
 list consumables; // Currently available consumables for $ operator in DAMAGE_RULES
+list seatLinks; // List of links that have a sit target
 
 Init(float startPoints) // Call only from state_entry or on_rez
 {
@@ -69,10 +72,10 @@ Init(float startPoints) // Call only from state_entry or on_rez
     integer n = 8;
     while (n--) c2aName += llChar(llFloor(llFrand(26)) + 65);
     llListen(-2453997, c2aName, "", "");
-    TakeDamage(0);
+    TakeDamage(0, []);
     consumables = DAMAGE_CONSUMABLES;
 }
-TakeDamage(float amount)
+TakeDamage(float amount, list damageReport)
 {
     points -= amount;
     if (points < 0) points = 0;
@@ -80,6 +83,19 @@ TakeDamage(float amount)
     llSetObjectDesc("LBA.v.[C2A LBA v0.2.0:" + c2aName + "]," + (string)llFloor(points) + ","
         + (string)llRound(MAX_POINTS));
     llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_HEALTH, points]);
+    if (damageReport) // for vehicles
+    {
+        string reportText = llDumpList2String(damageReport, "\n"); // may get truncated if spammed with hits
+        integer n = llGetListLength(seatLinks);
+        while (n--)
+        {
+            key sitter = llAvatarOnLinkSitTarget(llList2Integer(seatLinks, n));
+            if (sitter)
+            {
+                llRegionSayTo(sitter, 0, reportText);
+            }
+        }
+    }
     PointsChanged(points);
 }
 float ProcessDamage(float amount, string type)
@@ -188,6 +204,13 @@ default
         {
             llSetLinkSitFlags(LINK_SET, SIT_FLAG_NO_DAMAGE);
             llSetStatus(STATUS_BLOCK_GRAB_OBJECT, TRUE);
+            integer n = llGetObjectPrimCount(llGetKey());
+            do
+            {
+                integer seat = llList2Integer(llGetLinkPrimitiveParams(n, [PRIM_SIT_TARGET]), 0);
+                if (seat) seatLinks += [n];
+            }
+            while (--n);
         }
         else llSetLinkPrimitiveParamsFast(LINK_SET, [PRIM_SCRIPTED_SIT_ONLY, TRUE]);
         Init(0);
@@ -213,16 +236,39 @@ default
     on_damage(integer n)
     {
         float totalDamage;
+        list damageReport;
         while (n--)
         {
+            string reportText;
             list damageInfo = llDetectedDamage(n);
             float amount = llList2Float(damageInfo, 2) / 100;
             integer type = llList2Integer(damageInfo, 1);
             float finalDamage = ProcessDamage(amount, (string)type);
             totalDamage += finalDamage;
-            if (finalDamage != amount) llAdjustDamage(n, finalDamage * 100);
+            if (finalDamage != amount)
+            {
+                llAdjustDamage(n, finalDamage * 100);
+                if (IS_VEHICLE) reportText = " (from " + (string)llRound(amount) + ")";
+            }
+            if (IS_VEHICLE && finalDamage >= REPORT_THRESHOLD)
+            {
+                string method = "Damaged";
+                if (amount < 0) method = "Repaired";
+                string ownerName = llKey2Name(llDetectedOwner(n));
+                if (ownerName == "") ownerName = "secondlife:///app/agent/" + (string)llDetectedOwner(n) + "/inspect";
+                else if (llGetSubString(ownerName, -9, -1) == " Resident")
+                    ownerName = llDeleteSubString(ownerName, -9, -1);
+                string typeName;
+                if (type >= -1 && type <= 14) typeName = llList2String(["default", "acid", "blunt", "cold", "electric",
+                    "fire", "force", "necrotic", "piercing", "poison", "psychic", "radiant", "slash", "sonic",
+                    "emotional", "impact"], type);
+                else typeName = "type " + (string)type;
+                reportText = method + " by " + ownerName + " using \"" + llDetectedName(n) + "\" for "
+                    + (string)llRound(finalDamage) + typeName + " damage" + reportText;
+                damageReport += [reportText];
+            }
         }
-        TakeDamage(totalDamage);
+        TakeDamage(totalDamage, damageReport);
     }
     listen(integer channel, string name, key id, string text)
     {
@@ -240,7 +286,25 @@ default
             {
                 float amount = llList2Float(params, 1);
                 float finalDamage = ProcessDamage(amount, "L");
-                TakeDamage(amount);
+                list damageReport;
+                if (IS_VEHICLE && finalDamage >= REPORT_THRESHOLD)
+                {
+                    string method = "Damaged";
+                    if (amount < 0) method = "Repaired";
+                    key ownerKey = llGetOwnerKey(id);
+                    string ownerName;
+                    if (ownerKey) ownerName = llKey2Name(ownerKey);
+                    else ownerName == "(unknown owner)";
+                    if (ownerName == "") ownerName = "secondlife:///app/agent/" + (string)ownerKey + "/inspect";
+                    else if (llGetSubString(ownerName, -9, -1) == " Resident")
+                        ownerName = llDeleteSubString(ownerName, -9, -1);
+                    string typeName = "LBA";
+                    string adjustment;
+                    if (amount != finalDamage) adjustment = " (from " + (string)llRound(amount) + ")";
+                    damageReport = [method + " by " + ownerName + " using \"" + name + "\" for "
+                        + (string)llRound(finalDamage) + typeName + " damage" + adjustment];
+                }
+                TakeDamage(amount, damageReport);
                 key ownerKey = llGetOwnerKey(id);
                 if (ownerKey == id) ownerKey = "";
             }
