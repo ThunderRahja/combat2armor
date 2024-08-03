@@ -61,7 +61,7 @@ TakeDamage(float amount)
     points -= amount;
     if (points < 0) points = 0;
     else if (points > MAX_POINTS) points = MAX_POINTS;
-    llSetObjectDesc("LBA.v.[C2A LBA v0.1.0:" + c2aName + "]," + (string)llFloor(points) + ","
+    llSetObjectDesc("LBA.v.[C2A LBA v0.2.0:" + c2aName + "]," + (string)llFloor(points) + ","
         + (string)llRound(MAX_POINTS));
     llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_HEALTH, points]);
     PointsChanged(points);
