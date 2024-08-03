@@ -110,8 +110,8 @@ ShowResult()
                         signText = ", " + llList2String(["positive", "negative"], i) + " only";
                     }
                     else sign = "";
-                    if (type == "?") type = "unspecified";
-                    else if (type == "*") type = "all";
+                    if (type == "?") type = "all undefined types";
+                    else if (type == "*") type = "all types";
                     else if (type == "L") type = "LBA";
                     else
                     {
@@ -123,20 +123,24 @@ ShowResult()
                     }
                     types = llListReplaceList(types, [type], n, n);
                 }
-                list modifiers = llParseStringKeepNulls(llList2String(rules, i + 1), [","], []);
+                list modifiers = llParseString2List(llList2String(rules, i + 1), [","], []);
                 n = llGetListLength(modifiers);
+                if (n == 0) modifiers = ["no modifiers"];
                 while (n--)
                 {
                     string line = llList2String(modifiers, n);
-                    integer i = llSubStringIndex(OPERATORS, llGetSubString(line, 0, 0));
-                    if (i != -1)
+                    if (line)
                     {
-                        string value = llDeleteSubString(line, 0, 0);
-                        line = llList2String(OPER_TEXT, i);
-                        line = llReplaceSubString(line, "{V}", value, 0);
+                        integer i = llSubStringIndex(OPERATORS, llGetSubString(line, 0, 0));
+                        if (i != -1)
+                        {
+                            string value = llDeleteSubString(line, 0, 0);
+                            line = llList2String(OPER_TEXT, i);
+                            line = llReplaceSubString(line, "{V}", value, 0);
+                        }
+                        else line += " (unknown modifier)";
+                        modifiers = llListReplaceList(modifiers, [line], n, n);
                     }
-                    else line += " (unknown modifier)";
-                    modifiers = llListReplaceList(modifiers, [line], n, n);
                 }
                 zoneSummary += llList2CSV(types) + ": " + llList2CSV(modifiers);
             }
