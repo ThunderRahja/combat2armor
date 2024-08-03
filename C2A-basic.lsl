@@ -4,18 +4,16 @@
     
     This script is licensed under GNU GPL 3.0. You can read the license here:
         https://github.com/ThunderRahja/combat2armor/blob/main/LICENSE
+    
+    View the readme for instructions on how to use this script:
+        https://github.com/ThunderRahja/combat2armor
 */
 
 integer TEXT_LINK = LINK_THIS;
 integer IS_VEHICLE = FALSE;
 float MAX_POINTS = 100;
-list DAMAGE_RULES = [ // Refer to suggested damage types here: https://wiki.secondlife.com/wiki/LlDamage
-    // This is a sample damage rules set. Check the repo for the section on damage rules to create your own.
-    "1", "*2,F5",           // Acid damage is multiplied by 2, then floored to at least 5
-    "3,7,9,10,11,14", "*0", // Cold, necrotic, poison, psychic, radiant, and emotional damage are nullified
-    "13", "*0.5,C10",       // Sonic damage is divided by 2, then capped to at most 10
-    "L", "C300",            // LBA damage is capped to 300
-    "?", "C100"             // Any other damage type is capped to 100
+list DAMAGE_RULES = [
+    // See the repo for damage rule set examples that may be copy/pasted here.
 ];
 list DAMAGE_CONSUMABLES = []; // Used with $ operator; consumables are set to this list on rez and reset
 
@@ -25,11 +23,11 @@ PointsChanged(float newPoints) // Called after all damage is processed
 
     // Part 1: Generate and set the floating text string
     string newText = "[C2A+LBA]\n"; // C2A tag
-    integer n = 10; // Display this many segments of health bar
+    integer n = 10;
     do // Generate the health bar
     {
-        if (points > ((10 - n) * MAX_POINTS / 10)) newText += "⬛";
-        else newText += "⬜";
+        if (points > ((10 - n) * MAX_POINTS / 10)) newText += "⬛"; // add a filled segment
+        else newText += "⬜"; // add an empty segment
     }
     while (--n);
     newText +=  " " + (string)llFloor(points) + " / " + (string)llRound(MAX_POINTS); // Add numerical health / max
@@ -79,7 +77,7 @@ TakeDamage(float amount)
     points -= amount;
     if (points < 0) points = 0;
     else if (points > MAX_POINTS) points = MAX_POINTS;
-    llSetObjectDesc("LBA.v.[C2A LBA v0.1.0:" + c2aName + "]," + (string)llFloor(points) + ","
+    llSetObjectDesc("LBA.v.[C2A LBA v0.2.0:" + c2aName + "]," + (string)llFloor(points) + ","
         + (string)llRound(MAX_POINTS));
     llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_HEALTH, points]);
     PointsChanged(points);
@@ -88,10 +86,24 @@ float ProcessDamage(float amount, string type)
 {
     integer i;
     integer t = llGetListLength(DAMAGE_RULES);
+    integer matched;
+    string sign;
+    if (amount < 0) sign = "-";
+    else if (amount > 0) sign = "+";
     for (; i < t; i += 2)
     {
         list ruleTypes = llCSV2List(llList2String(DAMAGE_RULES, i));
-        if ((string)ruleTypes == "?" || llListFindList(ruleTypes, [type]) != -1)
+        integer run;
+        if ((string)ruleTypes == "*") run = 1; // match type * (all)
+        // match specific type:
+        else if (llListFindList(ruleTypes, [type]) + llListFindList(ruleTypes, [type + sign]) != -2)
+        {
+            matched = 1;
+            run = 1;
+        }
+        // match type ? (undefined):
+        else if (llListFindList(ruleTypes, ["?"]) + llListFindList(ruleTypes, ["?" + sign]) != -2 && !matched) run = 1;
+        if (run)
         {
             list ruleModifiers = llParseStringKeepNulls(llList2String(DAMAGE_RULES, i + 1), [","], []);
             integer x;
@@ -143,25 +155,24 @@ float ProcessDamage(float amount, string type)
                 }
                 else if (rule == 9) // %: chance
                 {
-                    if (llFrand(100) > value) x = y; // stop processing more modifiers
+                    if (llFrand(100) > value) x = y; // stop processing more modifiers on this line
                 }
                 else if (rule == 10) // >: greater
                 {
-                    if (amount <= value) x = y; // stop processing more modifiers
+                    if (amount <= value) x = y; // stop processing more modifiers on this line
                 }
                 else if (rule == 11) // <: less
                 {
-                    if (amount >= value) x = y; // stop processing more modifiers
+                    if (amount >= value) x = y; // stop processing more modifiers on this line
                 }
                 else if (rule == 12) // $: consume
                 {
                     integer index = llFloor(value);
                     integer quantity = llList2Integer(consumables, index);
                     if (quantity > 0) consumables = llListReplaceList(consumables, [quantity - 1], index, index);
-                    else x = y; // stop processing more modifiers
+                    else x = y; // stop processing more modifiers on this line
                 }
             }
-            i = t;
         }
     }
     if (amount > MAX_POINTS) amount = MAX_POINTS;
