@@ -157,16 +157,13 @@ default
                     {
                         list objectDetails = llGetObjectDetails(objectKey, [OBJECT_DESC, OBJECT_HEALTH]);
                         string objectDesc = llList2String(objectDetails, 0);
-                        if (llSubStringIndex(objectDesc, "[C2A ") != -1) // object is C2A
-                        {
-                            llDamage(objectKey, damage, DAMAGE_TYPE);
-                        }
-                        else if (llGetSubString(objectDesc, 0, 5) == "LBA.v.") // object is LBA
+                        float objectHealth = llList2Float(objectDetails, 1);
+                        if (llGetSubString(objectDesc, 0, 5) == "LBA.v." && objectHealth == 0) // object is LBA
                         {
                             integer chan = (integer)("0x" + llGetSubString(llMD5String((string)objectKey, 0), 0, 3));
                             llRegionSayTo(objectKey, chan, (string)objectKey + "," + (string)llCeil(damage / 100));
                         }
-                        else if (seat || llList2Integer(objectDetails, 1)) // object is a seat or has health
+                        else if (seat || objectHealth != 0) // object is a seat or has health
                         {
                             llDamage(objectKey, damage, DAMAGE_TYPE);
                         }
@@ -177,7 +174,7 @@ default
                     if (!checkSeats)
                     {
                         checkSeats = 1; // done with sensor, check seats now
-                        n = llGetListLength(seatsHit) / 2; 
+                        n = llGetListLength(seatsHit) / 2;
                     }
                 }
             }
