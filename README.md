@@ -79,28 +79,11 @@ This is a strided list of damage types and modifiers. This list can be converted
 I recommend supporting at least the recommended types listed on the [llDamage article](https://wiki.secondlife.com/wiki/LlDamage). There are some special types to note:
 - `0` is the default damage type. All weapons that don't set a damage type (i.e. weapons scripted before the Combat2 update) will have type 0.
 - `L` is the type assigned to LBA damage.
-- `?` matches any type not matching a type before it. It should always be the last type in the list (or zone).
+- `?` matches any type not matching a type before it (in its zone, if applicable).
+- `*` matches all types, even for types that have already been handled.
 - `Z` is followed by an integer, comma-separated integers, or `?`, to designate a damage zone to which any following rules apply, until another zone is designated. (C2A-cuboid and C2A-component only.)
 
-Rules may be applied to multiple types as seen on the third row of the table above. Multiple rules may also apply to one or more types.
-### Damage modifiers
-Most operators are followed by a value, either integer or float. Modifiers are processed in order from left to right. Operators are case-sensitive. Negative values are supported. Damage values are treated as absolute for most operators, meaning that `C100` will both reduce damage above 100 to 100 and increase damage below -100 to -100, for example.
-
-|  | Operator | Description |
-| --- | --- | --- |
-| X | Excess | If the absolute value of damage is above this value, set it to 0. |
-| D | Drop | If the absolute value of damage is below this value, set it to 0. |
-| C | Cap | If the absolute value of damage is above this value, reduce it to value. |
-| F | Floor | If the absolute value of damage is below this value, raise it to value. |
-| * | Multiply | Multiply damage by this value. |
-| + | Add | Increase absolute damage by this value. |
-| - | Subtract | Reduce absolute damage by value, but not below zero. |
-| & | Rectify | Change negative damage to positive damage. |
-| ^ | Positive | Change negative damage to 0. |
-| % | Chance | Continue processing modifiers after this one with a random value% chance, or stop if check fails. `%100` will always continue. |
-| > | Greater | Continue processing modifiers after this one if damage is higher than value. |
-| < | Less | Continue processing modifiers after this one if damage is lower than value. |
-| $ | Consume | Continue processing modifiers after this one if a consumable of this value index is above zero, decrementing it by 1. |
+Damage rules are explained in detail in the [settings guide](https://github.com/ThunderRahja/combat2armor/blob/main/settings_guide.md).
 
 ## How to Contribute
 I am seeking feedback from content creators! This is intended to be a community project that encompasses most use cases where scripted object health is needed. If you are a content creator (for weapons, vehicles, etc.) or combat region manager and would like to join the Combat 2 Armor discussion and development Discord server, send a message to Thunder Rahja via Second Life. Alternatively, click the Issues tab to open a bug report or feature request. You can submit code changes directly by creating a fork and subsequently a pull request.
