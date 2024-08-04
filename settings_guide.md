@@ -22,7 +22,7 @@ Damage types are specified as a list of comma-separated numbers and letters. Com
 | # | Type | Description |
 | --- | --- | --- |
 | -1 | impact | Damage generated for avatars impacting terrain or objects. |
-| 0 | generic | Generic or legacy damage before damage types were added. |
+| 0 | generic | Generic or default damage. LLCS weapons before Combat 2.0 all use this type. |
 | 1 | acid | Damage caused by caustic substances. |
 | 2 | blunt | Damage caused by blunt objects like a club. |
 | 3 | cold | Damage caused by extreme low temperature. |
@@ -94,12 +94,16 @@ This set caps damage to 300 per hit for damage and -20 per hit for repairs, and 
 ### Simulate LBA Light
 This set caps damage 300 per hit for damage and -20 per hit for repairs, and bumps partial damage (0.01 to 0.99, or 1 to 99 LLCS) damage up to a full point.
 ```
-"*+", "C300", // cap all types of damage to 300 damage
-"*-", "C20", // cap all types of repair to 20 damage
-"?+", "F1" // raise partial damage to 1 damage
+"*+", "C300,F1", // cap all types of damage to 300 damage, raise partial damage to 1 damage.
+"*-", "C20" // cap all types of repair to 20 damage
 ```
 ### Simulate LBA Slim
 Simply use C2A-simple for the minimal, bare bones experience of C2A, or use this rule set to more closely simulate LBA slim:
 ```
-"?+", "F1" // raise partial damage to 1 damage
+"*", "F1" // raise partial damage to 1 damage
+```
+### Simulate LBA Inverse
+LBA Inverse is used occasionally by breaches and other "damage" done to the region. This set inverts damage received and bumps up partial damage to a full point.
+```
+"*", "F1,*-1" // raise partial damage to 1 damage, multiply damage by -1
 ```
