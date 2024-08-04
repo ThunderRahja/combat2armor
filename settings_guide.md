@@ -70,6 +70,17 @@ Damage modifiers are a list of comma-separated operators that apply for the spec
 | < | Less | Continue processing modifiers after this one if damage is lower than value. |
 | $ | Consume | Continue processing modifiers after this one if a consumable of this value index is above zero, decrementing it by 1. |
 
+### Consumables
+Consumables are a nameless currency used by C2A to allow specific rules to run only a specific number of times. Take this configuration for example:
+```
+DAMAGE_RULES = [
+    "6", ">15,$0,*0.2", // Reduce force damage higher than 15 to 20% using consumable 0, "reactive armor"
+    "*", ">30,$1,*0.1" // Reduce any damage higher than 30 to 10% using consumable 1, "emergency shield"
+];
+DAMAGE_CONSUMABLES = [3, 1];
+```
+In this configuration, two consumables are provided for use in damage rules that reduce incoming damage conditionally. The first line of `DAMAGE_RULES` uses a "reactive armor" that may be used three times to reduce force damage before it no longer has any effect. The second line uses a "emergency shield" to block force damage after reactive armor has been used up, if damage is still high after being reduced by the reactive armor, or if the damage type is any other type.
+
 ## Damage Rule Sets for C2A-Basic
 The following damage rule sets are provided for ease of copying and pasting for quick use of C2A-basic.
 ### Simulate LBA Full
